@@ -1,0 +1,26 @@
+--- #YAML:1.0
+current_ptr: no
+notify: mpd.verif.surfboard@amd.com
+package_name: surfboard
+release_notes_file: release_notes
+src_files:
+  - lib/creg/creg_space.cc
+  - lib/creg/creg_space.h
+  - lib/creg/creg.cc
+  - lib/creg/creg.h
+  - lib/creg/creg_attribute.h
+  - lib/creg/creg_field.h
+  - lib/creg/creg_msg.cc
+  - lib/creg/creg_msg.h
+  - lib/pyc/sb.cc
+  - lib/pyc/sb.h
+  - lib/pyc/py_creg.cc
+  - lib/pyc/py_creg.h
+  - lib/pyc/callback.cc
+  - lib/pyc/callback.h
+  - lib/pyc/udpclient.c
+  - lib/pyc/module.cc
+  - lib/pyc/module.h
+  - build.py
+  - release_notes
+  - modulefile
