@@ -583,7 +583,7 @@ static PyObject *
 PycReg_lint_c(PycReg *reg, PyObject *args)
 {
 	uint32 ui1, ui2, ui3, ui4, size, msb, _msb, lsb, _lsb;
-	PyLongObject *z;
+	PyObject *z, *x1, *x2, *x3;
 	PyIntObject *inp = NULL;
 	cReg::DataControl dc = cReg::DATA;
 	DEBUG_FUNC_STR;
@@ -607,34 +607,43 @@ PycReg_lint_c(PycReg *reg, PyObject *args)
 		return (PyObject *) PyInt_FromLong(reg->r->getInt64(dc));
 
 	/* Allocate the long int */
-	ui2 = size / (sizeof(digit)<<3);
-	if (0 != (size % (sizeof(digit)<<3)))
-		ui2++;
-	z = _PyLong_New(ui2);
+	ui2 = size >> 4; /* Naren: FIXME need to use log_10(1^^size) */
+	z = PyLong_FromLong(0);
 	if (z == NULL)
-		return NULL;
-	memset(z->ob_digit, 0, z->ob_size * sizeof(digit));
-
-	/* Is it a sane machine ? */
-	if (0 != (32 % (sizeof(digit)<<3))) {
-    PyErr_SetString(PyExc_SystemError, "Attempt to create LongInt in a machine with imcompatible digit size!");
-		return NULL;
-	}
-	ui3 = 32 / (sizeof(digit)<<3);
+          return NULL;
 
 	/* Just copy */
 	msb = reg->r->msb;
 	lsb = reg->r->lsb;
-	for (ui4=0, ui1=0, _lsb=0; ui1<ui2; ui1++) {
-		if (0 == (ui1 % ui3)) {
-			_msb = (_lsb+31) > msb ? msb : _lsb+31;
-			ui4 = reg->r->getInt32(_msb, _lsb, dc);
-			_lsb += 32;
-		}
-		/* */
-		z->ob_digit[ui1] = (digit) ui4;
-		ui4 >>= sizeof(digit)<<3;
+        x1 = PyInt_FromSize_t(32);
+        for (ui4=0, ui1=0, _lsb=(msb&~0x1F); (ui1<ui2) && (_lsb <= msb); ui1++) {
+          /* end condition */
+          if (_lsb > msb) break;
+
+          /* 32 bits at a time... obtain the next bits */
+          _msb = (_lsb+31) > msb ? msb : _lsb+31;
+          ui4 = reg->r->getInt32(_msb, _lsb, dc);
+          _lsb -= 32; /* next _lsb */
+
+          /* shift bits */
+          x2 = PyNumber_Lshift(z, x1);
+          if (NULL == x2) {
+            return NULL;
+          }
+          Py_XDECREF(z);
+          z = x2;
+
+          /* OR with obtained values */
+          x2 = PyInt_FromLong(ui4);
+          x3 = PyNumber_Or(z, x2);
+          if (NULL == x3) {
+            return NULL;
+          }
+          Py_XDECREF(x2);
+          Py_XDECREF(z);
+          z = x3;
 	}
+        Py_XDECREF(x1);
 
 	return (PyObject *) z;
 }

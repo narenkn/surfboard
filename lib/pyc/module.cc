@@ -4,7 +4,7 @@
 
 static PyMethodDef SimModule_methods[] = {
 	{"wave", (PyCFunction)SimModule_wave, METH_VARARGS, PyDoc_STR("Gets the object to a waveform signal. Accepts path to signal, optional lengthof-pipe")},
-	{"surf", (PyCFunction)SimModule_surf, METH_VARARGS, PyDoc_STR("starts the waveform playback, for all objects associated with the fsdb")},
+	{"surf", (PyCFunction)SimModule_surf, METH_VARARGS, PyDoc_STR("starts the waveform playback, for this object")},
 	{"options", (PyCFunction)SimModule_options, METH_VARARGS, PyDoc_STR("called during sim time 0, but before early_initial")},
 	{"initial", (PyCFunction)SimModule_initial, METH_VARARGS, PyDoc_STR("called during sim time 0")},
 	{"sequential", (PyCFunction)SimModule_initial, METH_VARARGS, PyDoc_STR("called during every event")},
@@ -108,6 +108,18 @@ SimModule_finish(SimModule *self)
 }
 
 static int
+_SimModule_time(PyObject *self, void *arg)
+{
+	DEBUG_FUNC_STR;
+
+	Py_INCREF((PyObject *)arg);
+        Py_XDECREF(((SimModule *)self)->time);
+	((SimModule *)self)->time = arg;
+
+	return 0;
+}
+
+static int
 _SimModule_surf(PyObject *self, void *arg)
 {
 	DEBUG_FUNC_STR;
@@ -136,7 +148,7 @@ SimModule_surf(SimModule *self, PyObject *args)
 	byte_T *vc_ptr;
 	PyObject *key, *value;
 	Wave *w1;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 
 
 	/* Don't have to do anything if no object was created */
@@ -155,8 +167,8 @@ SimModule_surf(SimModule *self, PyObject *args)
 
 	/* checks */
 	if ((NULL == self->ocean) || (NULL == self->time)) {
-		PyErr_SetString(PyExc_SystemError, "FSDB object not initialised for SimModule Object : internal error?");
-		return NULL;
+          PyErr_SetString(PyExc_SystemError, "FSDB object not initialised for SimModule Object : internal error?");
+          return NULL;
 	}
 
 	/* init */
@@ -415,22 +427,32 @@ static int
 SimModule_init(SimModule *self, PyObject *args, PyObject *kwds)
 {
 	DEBUG_FUNC_STR;
-	PyObject *fsdb_name = NULL, *ob1;
+	PyObject *arg = NULL, *ob1;
 
 	/* check args */
-	if ((NULL == args) || (!PyArg_ParseTuple(args, "S", &fsdb_name))) {
-		PyErr_SetString(PyExc_KeyError, "Exactly one string argument is required");
+	if ((NULL == args) || (!PyArg_ParseTuple(args, "O", &arg))) {
+		PyErr_SetString(PyExc_KeyError, "Exactly one argument (\"verilog.fsdb\" | ocean) is required.1");
 		return -1;
 	}
-	assert (fsdb_name);
-
-	/* get the ocean */
-	ob1 = OceanType.tp_new(&OceanType, args, NULL);
-	if (NULL == ob1)
-		return -1;
-	if (0 != OceanType.tp_init(ob1, args, NULL))
-		return -1;
-	self->ocean = ob1;
+        if (PyObject_TypeCheck((PyObject *)arg, &OceanType)) {
+          self->ocean = arg;
+          Py_INCREF(arg);
+        } else if (PyString_Check((PyObject *)arg)) {
+          ob1 = OceanType.tp_new(&OceanType, args, NULL);
+          if (NULL == ob1) {
+            return -1;
+          }
+          /* get the ocean */
+          if (0 != OceanType.tp_init(ob1, args, NULL)) {
+            return -1;
+          }
+          self->ocean = ob1;
+        } else {
+          PyErr_SetString(PyExc_KeyError, "Exactly one argument (\"verilog.fsdb\" | ocean) is required.2");
+          Py_XDECREF(arg);
+          return -1;
+        }
+	assert (arg);
 
 	self->time = PyInt_FromLong(0);
 
@@ -478,9 +500,9 @@ SimModule_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 		assert(NULL == self->wave_list);
 		self->wave_list = PyList_New(0);
-
-		self->list_ref_cnt++;
 	}
+        self->list_ref_cnt++;
+
 	Py_INCREF((PyObject *)self);
 	PyList_Append(self->simmodule_list, (PyObject *)self);
 

@@ -3,13 +3,14 @@
 #define __CALLBACK_INCLUDED
 
 typedef struct {
-	PyObject_HEAD
-	static PyObject *simmodule_list;
-	static PyObject *wave_list;
-	static uint32 list_ref_cnt;
-	PyObject *ocean;
-	PyObject *time;
-	PyObject *event;
+  PyObject_HEAD
+  static PyObject *simmodule_list;
+  static PyObject *wave_list;
+  static uint32 list_ref_cnt;
+  PyObject *ocean;
+  PyObject *time;
+  PyObject *event;
+  PyObject *pval;
 } Callback;
 
 static PyObject *Callback_options(Callback *self, PyObject *args);

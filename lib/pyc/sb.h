@@ -9,26 +9,27 @@ typedef signed long int SB_Long;
 /*        Types defined here                                        */
 /********************************************************************/
 typedef struct {
-		PyObject_HEAD
-    PyObject *sig_path;
-    PyObject *ocean;
-		/* */
-    unsigned int idcode_valid : 1;
-    unsigned int wave_loaded : 1;
-    unsigned int num_bits : 16; /* Number of bits in this signal */
-		unsigned int num_idx;
-		unsigned int event;
-		unsigned int *idx_store;
-		/* Store sequence of values... */
-		unsigned int sq_len;
-		PycReg     **sq_data;
-		/* The connection with FSDB */
-		fsdbTreeCBDataVar *fsdb_var;
-    fsdbVarIdcode idcode;
-		ffrVCTrvsHdl  var_hdl;
+  PyObject_HEAD
+  PyObject *sig_path;
+  PyObject *ocean;
+  /* */
+  unsigned int idcode_valid : 1;
+  unsigned int wave_loaded : 1;
+  unsigned int num_bits : 16; /* Number of bits in this signal */
+  unsigned int num_idx;
+  unsigned int event;
+  unsigned int *idx_store;
+  /* Store sequence of values... */
+  unsigned int sq_len;
+  PycReg     **sq_data;
+  /* The connection with FSDB */
+  fsdbTreeCBDataVar *fsdb_var;
+  fsdbVarIdcode idcode;
+  ffrVCTrvsHdl  var_hdl;
 } Wave;
 static int Wave_clear(Wave *self);
 static void Wave_dealloc(Wave* self);
+static PyObject *Wave_call(Wave *self, PyObject *args, PyObject *other);
 static int Wave_traverse(Wave *self, visitproc visit, void *arg);
 static PyObject *Wave_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int Wave_init(Wave *self, PyObject *args, PyObject *kwds);
@@ -60,22 +61,24 @@ static PyObject *Wave_xor(Wave *wave, PyObject *op);
 static PyObject *Wave_lshift(Wave *wave, PyObject *op);
 static PyObject *Wave_rshift(Wave *wave, PyObject *op);
 static int Wave_setocean(Wave *self, PyObject *value, void *closure);
+#if 0
 static int Wave_Sq_length(Wave *wave);
 static PyObject *Wave_Sq_item(Wave *wave, int pos);
+#endif
 
 
 typedef struct {
-    PyObject_HEAD
-    static PyObject *ocean_dict;
-    PyObject *waves_dict;
-    PyObject *file;
-		PyObject *all_waves;
-		PyObject *time;
-		ffrObject *fsdb_obj;
-    static uint32 ocean_dict_count;
-		unsigned int initDone : 1;
-		unsigned int fsdbLoaded : 1;
-		unsigned int surfStarted : 1;
+  PyObject_HEAD
+  static PyObject *ocean_dict;
+  PyObject *waves_dict;
+  PyObject *file;
+  PyObject *all_waves;
+  PyObject *time;
+  ffrObject *fsdb_obj;
+  static uint32 ocean_dict_count;
+  unsigned int initDone : 1;
+  unsigned int fsdbLoaded : 1;
+  unsigned int surfStarted : 1;
 } Ocean;
 static int Ocean_clear(Ocean *self);
 static int Ocean_traverse(Ocean *self, visitproc visit, void *arg);
@@ -91,5 +94,5 @@ static PyObject *Ocean_firstVC(Ocean *self, PyObject *args);
 static PyObject *_Ocean_nextVC(Ocean *self, Wave *wave);
 static PyObject *Ocean_startSurf(Ocean* self);
 static void Ocean_endSurf(Ocean* self);
+static PyObject *Ocean_surf(Ocean *self, PyObject *args);
 #endif
-

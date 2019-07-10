@@ -3,7 +3,7 @@
 
 static PyMethodDef Callback_methods[] = {
 	{"wave", (PyCFunction)Callback_wave, METH_VARARGS, PyDoc_STR("Gets the object to a waveform signal. Accepts path to signal, optional lengthof-pipe")},
-	{"surf", (PyCFunction)Callback_surf, METH_VARARGS, PyDoc_STR("starts the waveform playback, for all objects associated with the fsdb")},
+	{"surf", (PyCFunction)Callback_surf, METH_VARARGS, PyDoc_STR("starts the waveform playback, for this object")},
 	{"add_callback", (PyCFunction)Callback_add_callback, METH_VARARGS, PyDoc_STR("registers the Wave which triggers callback()")},
 	{"options", (PyCFunction)Callback_options, METH_VARARGS, PyDoc_STR("called during sim time 0, but before early_initial")},
 	{"initial", (PyCFunction)Callback_initial, METH_VARARGS, PyDoc_STR("called during sim time 0")},
@@ -104,6 +104,19 @@ Callback_finish(Callback *self)
 	PyObject *ret = Py_None;
 	Py_INCREF(ret);
 	return ret;
+}
+
+
+static int
+_Callback_time(PyObject *self, void *arg)
+{
+	DEBUG_FUNC_STR;
+
+	Py_INCREF((PyObject *)arg);
+        Py_XDECREF(((Callback *)self)->time);
+	((Callback *)self)->time = arg;
+
+	return 0;
 }
 
 static int
@@ -319,6 +332,7 @@ Callback_dealloc(Callback* self)
 	Py_XDECREF(self->ocean);
 	Py_XDECREF(self->time);
 	Py_XDECREF(self->event);
+	Py_XDECREF(self->pval);
 
 	/* thrash it */
 	self->ob_type->tp_free((PyObject*)self);
@@ -329,26 +343,39 @@ static int
 Callback_init(Callback *self, PyObject *args, PyObject *kwds)
 {
 	DEBUG_FUNC_STR;
-	PyObject *fsdb_name = NULL, *ob1;
+	PyObject *arg = NULL, *ob1;
 
 	/* check args */
-	if ((NULL == args) || (!PyArg_ParseTuple(args, "S", &fsdb_name))) {
-		PyErr_SetString(PyExc_KeyError, "Exactly one string argument is required");
+	if ((NULL == args) || (!PyArg_ParseTuple(args, "O", &arg))) {
+		PyErr_SetString(PyExc_KeyError, "Exactly one argument (\"verilog.fsdb\" | ocean) is required");
 		return -1;
 	}
-	assert (fsdb_name);
-
-	/* get the ocean */
-	ob1 = OceanType.tp_new(&OceanType, args, NULL);
-	if (NULL == ob1)
-		return -1;
-	if (0 != OceanType.tp_init(ob1, args, NULL))
-		return -1;
-	self->ocean = ob1;
+        if (PyObject_TypeCheck((PyObject *)arg, &OceanType)) {
+          self->ocean = arg;
+          Py_INCREF(arg);
+        } else if (PyString_Check((PyObject *)arg)) {
+          ob1 = OceanType.tp_new(&OceanType, args, NULL);
+          if (NULL == ob1) {
+            Py_XDECREF(arg);
+            return -1;
+          }
+          /* get the ocean */
+          if (0 != OceanType.tp_init(ob1, args, NULL)) {
+            Py_XDECREF(arg);
+            return -1;
+          }
+          self->ocean = ob1;
+        } else {
+          PyErr_SetString(PyExc_KeyError, "Exactly one argument (\"verilog.fsdb\" | ocean) is required");
+          Py_XDECREF(arg);
+          return -1;
+        }
+	assert (arg);
 
 	self->time = PyInt_FromLong(0);
 
 	self->event = NULL;
+	self->pval = NULL;
 	return 0;
 }
 
@@ -373,6 +400,9 @@ Callback_clear(Callback *self)
 	Py_XDECREF(self->event);
 	self->event = NULL;
 
+	Py_XDECREF(self->pval);
+	self->pval = NULL;
+
 	assert (0 != self->list_ref_cnt);
 	assert (self->wave_list);
 	assert (self->simmodule_list);
@@ -396,9 +426,9 @@ Callback_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 		assert(NULL == self->wave_list);
 		self->wave_list = PyList_New(0);
-
-		self->list_ref_cnt++;
 	}
+        self->list_ref_cnt++;
+
 	Py_INCREF((PyObject *)self);
 	PyList_Append(self->simmodule_list, (PyObject *)self);
 
