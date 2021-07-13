@@ -204,15 +204,12 @@ SimModule_surf(SimModule *self, PyObject *args)
 	/* We know that this dictionary's value's refcount will not be decremented
 	hence we can use waves, but remember to kill the dictionay at the end of this
 	function */
-	idcode_map = PyDict_New();
 	uint32 ui2;
 	for (ui2 = 0; PyDict_Next(((Ocean *)(self->ocean))->waves_dict, &pos, &key, &value); ui2++) {
 		w1 = (Wave *) value;
 		sig_arr_ptr[ui2] = w1;
 		sig_arr[ui2] = w1->idcode;
 		w1->event = 0;
-		if (0 != PyDict_SetItem(idcode_map, PyInt_FromLong(w1->idcode), (PyObject *)w1))
-			goto SimModule_surf_error_release_mem;
 		assert (ui2<sig_num);
 	}
 	assert (ui2 == sig_num);
@@ -231,9 +228,12 @@ SimModule_surf(SimModule *self, PyObject *args)
 	}
 	tb_vc_trvs_hdl->ffrGetVarIdcode(&var_idcode);
 	tb_vc_trvs_hdl->ffrGetXTag(&time);
-	w1 = (Wave *)PyDict_GetItem(idcode_map, PyInt_FromLong(var_idcode));
-	_setHDLValue(w1, vc_ptr);
-	w1->event = 1;
+        for (uint ui1=0; ui1<sig_num; ui1++) {
+          if (var_idcode == sig_arr_ptr[ui1]->idcode) {
+            _setHDLValue(sig_arr_ptr[ui1], vc_ptr);
+            sig_arr_ptr[ui1]->event = 1;
+          }
+        }
 
 	//
 	// Iterate until no more vc
@@ -263,9 +263,12 @@ SimModule_surf(SimModule *self, PyObject *args)
 		}
 		tb_vc_trvs_hdl->ffrGetVarIdcode(&var_idcode);
 		tb_vc_trvs_hdl->ffrGetVC(&vc_ptr);
-		w1 = (Wave *)PyDict_GetItem(idcode_map, PyInt_FromLong(var_idcode));
-		_setHDLValue(w1, vc_ptr);
-		w1->event = 1;
+                for (uint ui1=0; ui1<sig_num; ui1++) {
+                  if (var_idcode == sig_arr_ptr[ui1]->idcode) {
+                    _setHDLValue(sig_arr_ptr[ui1], vc_ptr);
+                    sig_arr_ptr[ui1]->event = 1;
+                  }
+                }
 	}
 
 	if (0 == _SimModule_surf((PyObject *)self, (void *)"final")) {
@@ -277,12 +280,6 @@ SimModule_surf(SimModule *self, PyObject *args)
 
 SimModule_surf_error_release_mem:
 	pos = 0;
-	if (NULL != idcode_map) {
-		while (PyDict_Next(idcode_map, &pos, &key, &value)) {
-			Py_DECREF(key);
-		}
-		Py_DECREF(idcode_map);
-	}
 	//
 	// Remember to call ffrFree() to free the memory occupied by this
 	// time-based vc trvs hdl

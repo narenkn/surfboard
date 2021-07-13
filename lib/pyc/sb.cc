@@ -1,6 +1,7 @@
 #include <Python.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <boost/algorithm/string/join.hpp>
 #include "structmember.h"
 #include "fsdbShr.h"
 #include "ffrAPI.h"
@@ -1070,7 +1071,6 @@ Ocean_init(Ocean *self, PyObject *args, PyObject *kwds)
           /* decide if need to create new fsdb */
           sprintf(buf, "%s", PyString_AS_STRING(file));
           if (0 != stat(buf, &fstat)) {
-            cerr << "Can't access the FSDB file" << endl;
             break;
           }
           sprintf(buf, "%s.%x", PyString_AS_STRING(file), geteuid());
@@ -1334,6 +1334,7 @@ Ocean_newWave(Ocean *self, PyObject *args, PyObject *kwds)
 }
 
 /* Methodology to keep track of which hierarchy we are in... */
+static vector<std::string> path;
 static string current_hier;
 
 bool_T
@@ -1356,30 +1357,24 @@ MyTreeCBFunc (fsdbTreeCBType cb_type, void *client_data, void *cb_data)
 
 	switch (cb_type) {
 		case FSDB_TREE_CBT_BEGIN_TREE:
-			current_hier = "";
 			break;
 		case FSDB_TREE_CBT_SCOPE:
 			scope = (fsdbTreeCBDataScope*) cb_data;
-			if (!current_hier.empty())
-				current_hier += ".";
-			current_hier += (char *) scope->name;
-//			cerr << "\tNow scope:" << current_hier << endl;
+			path.push_back(std::string{(char *) scope->name});
+                        current_hier = boost::algorithm::join(path, ".");
 			break;
 		case FSDB_TREE_CBT_UPSCOPE:
-			ui1 = current_hier.rfind(".");
-			if (ui1 == string::npos)
-				current_hier = "";
-			else
-				current_hier.resize(ui1);
-//			cerr << "\tNow scope:" << current_hier << endl;
+                  path.pop_back();
+                  current_hier = boost::algorithm::join(path, ".");
 			break;
 		case FSDB_TREE_CBT_VAR:
 			var = (fsdbTreeCBDataVar*)cb_data;
-			if (!current_hier.empty())
-				sig = current_hier + ".";
+                        sig = current_hier + ".";
 			/* Remove trailing [] */
 			s1 = (char *) var->name;
-                        //                        cerr << "Signal:" << s1 << endl;
+                        //                        if ("sys.pkg00.mpu00.df_tcdx_t4.TCDX1.TREQQ." == sig) {
+                        //                          cout << "Var sys.pkg00.mpu00.df_tcdx_t4.TCDX1.TREQQ." << s1 << endl;
+                        //                        }
 			ui5 = 0;
 			do {
 				ui1 = s1.rfind("[");
@@ -1475,6 +1470,7 @@ Ocean_startSurf(Ocean* self)
 
 	/* Check and open fsdb file */
 	fname = PyString_AS_STRING(self->file);
+        ffrObject::ffrInfoSuppress(true);
 	if (0 == ffrObject::ffrIsFSDB(fname)) {
   	PyErr_SetString(PyExc_KeyError, "Not an fsdb file.");
 		return NULL;
