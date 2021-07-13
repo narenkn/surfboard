@@ -12,6 +12,30 @@ Narendran.Kumaragurunathan@amd.com
 Version history
 ===============
 
+7: Narendran 20-Nov-2019
+   * Changed scope variable to a vector. Looks like some issue when used as string and eliminate upto previous . upon upscope.
+
+6: Narendran 07-May-2019
+   * Changed ffrOpen to ffrOpen2 as per Synopsys STAR: 8001219656
+
+5: Narendran 06-Feb-2018
+   * Fixed crash if value change pointer is returned NULL. Occurs in non-zero FSDB.
+
+4: Narendran 21-Mar-2016
+   * Ocean.surf to surf all objects belonging to this Ocean
+   * Major speed improvement by creating smaller fsdb
+
+3: Narendran 09-Mar-2016
+   * Reviewed and made all tests passing
+   * Fixed reg.i() function as it gave wrong values for large numbers
+   * Bug : Assign py-objects after full construction, if not garbage collector could run through under-constructed objects as well.
+   * Verdi stopped providing static libs, changed to dynamic libs
+
+2: Narendran 26-Feb-2016
+   * Added Makefile to run tests and report PASS/FAIL
+   * Made pipe values accessed by () than []
+   * Made multi-dim arrays access via [] in name itself: this is how fsdb provides
+
 1: Narendran 09-Jun-2013
-	* Initial version created
+   * Initial version created
 
