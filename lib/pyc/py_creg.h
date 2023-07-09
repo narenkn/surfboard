@@ -6,23 +6,23 @@
 #include <longintrepr.h>
 
 #define DEBUG_FUNC_IN false
-#define DEBUG_FUNC_STR do { \
-		if (DEBUG_FUNC_IN) \
-			fprintf(stderr, "in func:%s file:%s\n", __FUNCTION__, __FILE__); \
-	} while (0)
-#define DEBUG_FUNC_ENDSTR do { \
-		if (DEBUG_FUNC_IN) \
-			fprintf(stderr, "exiting func:%s file:%s\n", __FUNCTION__, __FILE__); \
-	} while (0)
+#define DEBUG_FUNC_STR do {                                             \
+    if (DEBUG_FUNC_IN)                                                  \
+      fprintf(stderr, "in func:%s file:%s\n", __FUNCTION__, __FILE__);  \
+  } while (0)
+#define DEBUG_FUNC_ENDSTR do {                                          \
+    if (DEBUG_FUNC_IN)                                                  \
+      fprintf(stderr, "exiting func:%s file:%s\n", __FUNCTION__, __FILE__); \
+  } while (0)
 
-extern char py_creg_err_str[256];
+  extern char py_creg_err_str[256];
 
-#define FATAL_ERROR(...) \
-	do { \
-		sprintf(py_creg_err_str, __VA_ARGS__); \
-		PyErr_SetString(PyExc_RuntimeError, py_creg_err_str); \
-		PyErr_Print(); \
-	} while (0) \
+#define FATAL_ERROR(...)                                        \
+  do {                                                          \
+    sprintf(py_creg_err_str, __VA_ARGS__);                      \
+    PyErr_SetString(PyExc_RuntimeError, py_creg_err_str);       \
+    PyErr_Print();                                              \
+  } while (0)                                                   \
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
@@ -34,8 +34,8 @@ typedef enum {BIN=0, HEX=1, OCT=2, DECIMAL=3} RadixFormat;
 typedef enum {LSB=0, MSB=1} IndexFormat;
 
 typedef struct {
-	PyObject_HEAD
-	cReg *r;
+  PyObject_HEAD
+  cReg *r;
 } PycReg;
 
 static PyObject *PycReg_alloc(PyTypeObject *type, int nitems);

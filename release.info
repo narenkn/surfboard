@@ -18,7 +18,6 @@ src_files:
   - lib/pyc/py_creg.h
   - lib/pyc/callback.cc
   - lib/pyc/callback.h
-  - lib/pyc/udpclient.c
   - lib/pyc/module.cc
   - lib/pyc/module.h
   - build.py

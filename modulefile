@@ -14,8 +14,8 @@ set mod_path [file dirname $ModulesCurrentModulefile]
 
 setenv ANCHOR_surfboard      $mod_path
 
-source $env(CBWA_MODULES_LIB)/safe_load.tcl
-safe_load        gcc/3.3.4
-safe_load        python/2.3.4
-safe_load        verdi/2013.01
+##source $env(CBWA_MODULES_LIB)/safe_load.tcl
+##safe_load        gcc/3.3.4
+##safe_load        python/2.3.4
+##safe_load        verdi/2013.01
 
