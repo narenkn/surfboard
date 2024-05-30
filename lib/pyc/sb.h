@@ -16,6 +16,7 @@ typedef struct {
   unsigned int idcode_valid : 1;
   unsigned int wave_loaded : 1;
   unsigned int num_bits : 16; /* Number of bits in this signal */
+  unsigned int dtidcode : 16; /* data type idcode */
   unsigned int num_idx;
   unsigned int event;
   unsigned int *idx_store;

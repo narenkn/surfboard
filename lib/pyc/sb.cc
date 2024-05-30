@@ -1153,18 +1153,36 @@ _Ocean_nextVC(Ocean *self, Wave *wave)
       val_1 = 0; val_0 = 0;
       ui7 = ((ui4+32) > ui6) ? ui6 : ui4+32;
       for (ui3=ui4; ui3<ui7; ui3++) {
-        //                          std::cerr << "vc_ptr:" << ui6-ui3-1<<endl;
-        switch(vc_ptr[ui6-ui3-1]) {
-        case FSDB_BT_VCD_X:
-          val_0 |= 1<<(ui3-ui4);
-        case FSDB_BT_VCD_Z:
-          val_1 |= 1<<(ui3-ui4);
-          break;
-        case FSDB_BT_VCD_1:
-          val_0 |= 1<<(ui3-ui4);
-          break;
-        default:
-          break;
+        // std::cerr << "vc_ptr:" << ui6-ui3-1<<endl;
+        if ( (w1->dtidcode < FSDB_DT_VHDL_BOOLEAN) ||
+             (w1->dtidcode > FSDB_DT_VHDL_INTEGER_X_VALUE) ) { /* Verilog */
+          switch(vc_ptr[ui6-ui3-1]) {
+          case FSDB_BT_VCD_X:
+            val_0 |= 1<<(ui3-ui4);
+          case FSDB_BT_VCD_Z:
+            val_1 |= 1<<(ui3-ui4);
+            break;
+          case FSDB_BT_VCD_1:
+            val_0 |= 1<<(ui3-ui4);
+            break;
+          default:
+            break;
+          }
+        } else { /* VHDL */
+          switch(vc_ptr[ui6-ui3-1]) {
+          case FSDB_BT_VHDL_STD_ULOGIC_0:
+            break;
+          case FSDB_BT_VHDL_STD_ULOGIC_Z:
+            val_1 |= 1<<(ui3-ui4);
+            break;
+          case FSDB_BT_VHDL_STD_ULOGIC_1:
+            val_0 |= 1<<(ui3-ui4);
+            break;
+          default:
+            val_0 |= 1<<(ui3-ui4);
+            val_1 |= 1<<(ui3-ui4);
+            break;
+          }
         }
       }
       if ((0 == w1->event) && (val_0 != w1->sq_data[0]->r->getDataWord(ui5)))
@@ -1295,7 +1313,7 @@ MyTreeCBFunc (fsdbTreeCBType cb_type, void *client_data, void *cb_data)
   switch (cb_type) {
   case FSDB_TREE_CBT_BEGIN_TREE:
     break;
-  case FSDB_TREE_CBT_ARRAY_BEGIN:
+  // case FSDB_TREE_CBT_ARRAY_BEGIN:
   case FSDB_TREE_CBT_RECORD_BEGIN:
   case FSDB_TREE_CBT_BUS_BEGIN:
   case FSDB_TREE_CBT_STRUCT_BEGIN:
@@ -1319,7 +1337,7 @@ MyTreeCBFunc (fsdbTreeCBType cb_type, void *client_data, void *cb_data)
     path.push_back(std::string{c1});
     current_hier = boost::algorithm::join(path, ".");
     break;
-  case FSDB_TREE_CBT_ARRAY_END:
+  // case FSDB_TREE_CBT_ARRAY_END:
   case FSDB_TREE_CBT_RECORD_END:
   case FSDB_TREE_CBT_BUS_END:
   case FSDB_TREE_CBT_STRUCT_END:
@@ -1332,10 +1350,11 @@ MyTreeCBFunc (fsdbTreeCBType cb_type, void *client_data, void *cb_data)
     sig = current_hier + ".";
     /* Remove trailing [] */
     s1 = (char *) var->name;
-    // if ("rgx_slc5_tb_top.i_rgx_jones_wrapper_for_slc5_tb.i_rgx_jones4.i_rgx_chest_wrap0.i_rgx_slc5_bank_wrap.i_rgx_slc5_bank0.i_rgx_slc5_bank_cmu.i_rgx_slc5_bank_acm.acm_icm_req_rec" == current_hier) {
+    // if (current_hier.find("rgx_usc3_smp_tb_top.i_rgx_usc3_smp.i_rgx_usc3_smp_tpxcache.g_rgx_usc3_smp_tpxcache_backend[3].i_rgx_usc3_smp_tpxcache_backend") != std::string::npos) {
+    //   treedebug = true;
     // if ("sys.pkg00.mpu00.df_tcdx_t4.TCDX1.TREQQ." == sig) {
     //   cout << "Var " << sig << s1 << endl;
-    // }
+    // } else       treedebug = false;
     ui5 = 0;
     do {
       ui1 = s1.rfind("[");
@@ -1366,6 +1385,7 @@ MyTreeCBFunc (fsdbTreeCBType cb_type, void *client_data, void *cb_data)
       //cerr << "Found variable:" << sig << " num_idx:" << (ui5>>1) << endl;
       wsig = (Wave *) osig;
       wsig->idcode = var->u.idcode;
+      wsig->dtidcode = var->dtidcode;
       wsig->idcode_valid = 1;
       wsig->num_idx = ui5>>1;
       wsig->idx_store = ui_store;
@@ -1482,7 +1502,7 @@ Ocean_startSurf(Ocean* self)
       wave->sq_data[ui3]->r->resize(wave->num_bits-1, 0);
     }
     if (FSDB_BYTES_PER_BIT_1B != wave->var_hdl->ffrGetBytesPerBit()) {
-      PyErr_SetString(PyExc_LookupError, "Variable big : contact narendran.kumaragurunathan@amd.com for a fix");
+      PyErr_SetString(PyExc_LookupError, "Variable big : contact Narendran Kumaragurunathan for a fix");
       return NULL;
     }
   }

@@ -310,17 +310,33 @@ _setHDLValue(Wave *w1, byte_T *vc_ptr)
     val_1 = 0; val_0 = 0;
     ui7 = ((ui4+32) > ui6) ? ui6 : ui4+32;
     for (ui3=ui4; ui3<ui7; ui3++) {
-      switch(vc_ptr[ui6-ui3-1]) {
-      case FSDB_BT_VCD_X:
-        val_0 |= 1<<(ui3-ui4);
-      case FSDB_BT_VCD_Z:
-        val_1 |= 1<<(ui3-ui4);
-        break;
-      case FSDB_BT_VCD_1:
-        val_0 |= 1<<(ui3-ui4);
-        break;
-      default:
-        break;
+      if ( (w1->dtidcode < FSDB_DT_VHDL_BOOLEAN) ||
+           (w1->dtidcode > FSDB_DT_VHDL_INTEGER_X_VALUE) ) { /* Verilog */
+        switch(vc_ptr[ui6-ui3-1]) {
+        case FSDB_BT_VCD_X:
+          val_0 |= 1<<(ui3-ui4);
+        case FSDB_BT_VCD_Z:
+          val_1 |= 1<<(ui3-ui4);
+          break;
+        case FSDB_BT_VCD_1:
+          val_0 |= 1<<(ui3-ui4);
+          break;
+        default:
+          break;
+        }
+      } else { /* VHDL */
+        switch(vc_ptr[ui6-ui3-1]) {
+        case FSDB_BT_VHDL_STD_ULOGIC_X:
+          val_0 |= 1<<(ui3-ui4);
+        case FSDB_BT_VHDL_STD_ULOGIC_Z:
+          val_1 |= 1<<(ui3-ui4);
+          break;
+        case FSDB_BT_VHDL_STD_ULOGIC_1:
+          val_0 |= 1<<(ui3-ui4);
+          break;
+        default:
+          break;
+        }
       }
     }
     w1->sq_data[0]->r->setDataWord(ui5, val_0);
