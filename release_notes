@@ -12,6 +12,9 @@ Narendran.Kumaragurunathan@amd.com
 Version history
 ===============
 
+8: Narendran 31-May-2024
+   * Added support for VHDL std_logic_vector.
+
 7: Narendran 20-Nov-2019
    * Changed scope variable to a vector. Looks like some issue when used as string and eliminate upto previous . upon upscope.
 
